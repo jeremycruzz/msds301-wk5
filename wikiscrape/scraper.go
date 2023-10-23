@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/gocolly/colly"
+	"github.com/jeremycruzz/msds301-wk5/sets"
 )
 
 type Scraper struct {
@@ -34,22 +34,24 @@ func NewScraper(concurrency int) *Scraper {
 
 // make callback for colly
 func (s *Scraper) init() {
-	s.colly.OnHTML("title", func(element *colly.HTMLElement) {
-		fmt.Println("starting")
-		title := element.Text
-		text := element.DOM.Closest("body").Text()
+	s.colly.OnHTML("html", func(element *colly.HTMLElement) {
+		// extract the title from head
+		title := element.ChildText("head title")
+
+		// extract the text from body
+		text := element.ChildText("body")
 
 		// get tags from url
 		url := element.Request.URL.String()
-		tags := strings.Split(url, "/")
+		tags := extractTags(url)
 
 		data := Data{
 			Url:   url,
 			Title: title,
+			Tags:  tags,
 			Text:  text,
-			Tags:  tags[1:],
 		}
-		fmt.Println("stopping")
+
 		// append to the corpus
 		s.corpus = append(s.corpus, data)
 	})
@@ -57,13 +59,11 @@ func (s *Scraper) init() {
 
 // scrapes url(s)
 func (s *Scraper) Scrape(urls ...string) {
-	var wg sync.WaitGroup
 
 	for _, url := range urls {
-		wg.Add(1)
-		go s.scrapeURL(url, &wg)
+		s.colly.Visit(url)
 	}
-	wg.Wait()
+	s.colly.Wait() // never forget this
 }
 
 // writes the corpus to a file
@@ -84,11 +84,37 @@ func (s *Scraper) WriteCorpusToFile(filepath string) error {
 	return nil
 }
 
-func (s *Scraper) scrapeURL(url string, wg *sync.WaitGroup) {
-	defer wg.Done()
+func extractTags(url string) []string {
+	var cleanedTags []string
+	var cleanedLastTags []string
 
-	err := s.colly.Visit(url)
-	if err != nil {
-		fmt.Printf("Error visiting %s: %v\n", url, err)
+	// remove parenthesis
+	url = strings.ReplaceAll(url, "(", "")
+	url = strings.ReplaceAll(url, ")", "")
+
+	// split by slashes
+	tags := strings.Split(url, "/")
+
+	// filter out empty tags
+	for _, tag := range tags {
+		if tag != "" {
+			cleanedTags = append(cleanedTags, tag)
+		}
 	}
+
+	// split the last tag by underscores
+	lastTag := cleanedTags[len(cleanedTags)-1]
+	lastTagSplit := strings.Split(lastTag, "_")
+
+	// remove stop words and empty tags
+	for _, tag := range lastTagSplit {
+		if tag != "" && !sets.StopWords[strings.ToLower(tag)] {
+			cleanedLastTags = append(cleanedLastTags, strings.ToLower(tag))
+		}
+	}
+
+	// replace last part with split
+	cleanedTags = append(cleanedTags[:len(cleanedTags)-2], cleanedLastTags...)
+
+	return cleanedTags
 }
