@@ -1,7 +1,7 @@
 # msds301-wk5
 
 ### Setup (Windows 11 + Git Bash)
-- Clone repo with `git clone git@github.com:jeremycruzz/msds301-wk4.git`
+- Clone repo with `git clone git@github.com:jeremycruzz/msds301-wk5.git`
 
 ### Building executable
 - Run `go build -o scrapewiki.exe ./cmd/scrapewiki`
@@ -9,6 +9,11 @@
 ### Running Go executable
 - Run `./scrapewiki.exe {threads: OPTIONAL}`
 - results should be saved to `./results/corpus_{threads}.json`
+
+### Importing sets
+- add import
+- `import github.com/jeremycruzz/msds301-wk5/sets`
+- use `sets.Stopwords` in code
 
 ### Results
 
