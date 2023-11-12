@@ -12,7 +12,7 @@ import (
 
 type Scraper struct {
 	colly  *colly.Collector
-	corpus []Data
+	Corpus []Data
 }
 
 // create a new scraper with a concurrency limit
@@ -53,7 +53,7 @@ func (s *Scraper) init() {
 		}
 
 		// append to the corpus
-		s.corpus = append(s.corpus, data)
+		s.Corpus = append(s.Corpus, data)
 	})
 }
 
@@ -70,7 +70,7 @@ func (s *Scraper) Scrape(urls ...string) {
 func (s *Scraper) WriteCorpusToFile(filepath string) error {
 
 	// marshall json with indents for readability
-	corpusJSON, err := json.MarshalIndent(s.corpus, "", "  ")
+	corpusJSON, err := json.MarshalIndent(s.Corpus, "", "  ")
 	if err != nil {
 		return fmt.Errorf("error marshaling to JSON: %v", err)
 	}
